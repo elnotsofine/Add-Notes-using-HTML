@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EL Notes</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #F5EAEA;
+        margin: 0;
+        padding: 0;
+    }
+
+    header {
+        background: #1C113C;
+        color: #FFFFFF;
+        padding: 25px 20px;
+        font-size: 30px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 25px auto;
+        background: #FFFFFF;
+        padding: 50px;
+        border-radius: 10px;
+        box-shadow: 0 0px 10px #1C113C;
+    }
+
+    input, textarea {
+        width: 98%;
+        margin: 8px 0;
+        padding: 10px;
+        border: 1px solid #c6c6c6;
+        border-radius: 5px;
+    }
+
+    button {
+        padding: 10px 15px;
+        background: #1C113C;
+        border: none;
+        color: #FFFFFF;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    button:hover {
+        opacity: 0.9;
+    }
+
+    .note {
+        background: #FFFFFF;
+        border-left: 5px solid #1C113C;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+        position: relative;
+    }
+
+    .note h3 {
+        margin: 0;
+        color: #1C113C;
+    }
+
+    .note-buttons {
+        margin-top: 10px;
+    }
+
+    .danger {
+        background: #7a2828;
+    }
+
+    .trash-section {
+        margin-top: 30px;
+        padding: 15px;
+        background: #FFFFFF;
+        border-radius: 10px;
+        border: 1px solid #c6c6c6;
+    }
+
+    .trash-note {
+        background: #F5EAEA;
+        border-left: 5px solid #7a2828;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+</style>
+
+</head>
+<body>
+
+<header>EL Notes</header>
+
+<div class="container">
+
+    <h2>Add Notes</h2>
+
+    <input type="hidden" id="editIndex">
+
+    <input type="text" id="title" placeholder="Title">
+    <textarea id="content" rows="3" placeholder="Add text here..."></textarea>
+
+    <button onclick="saveNote()">Save</button>
+
+    <h2 style="margin-top:30px;">Recent Save</h2>
+    <div id="notes-list"></div>
+
+    <div class="trash-section">
+        <h2>Recycle Bin</h2>
+        <div id="trash-list"></div>
+    </div>
+
+</div>
+
+<script>
+let notes = JSON.parse(localStorage.getItem("notes")) || [];
+let trash = JSON.parse(localStorage.getItem("trash")) || [];
+
+function updateLocalStorage() {
+    localStorage.setItem("notes", JSON.stringify(notes));
+    localStorage.setItem("trash", JSON.stringify(trash));
+}
+
+function saveNote() {
+    const title = document.getElementById("title").value;
+    const content = document.getElementById("content").value;
+    const index = document.getElementById("editIndex").value;
+
+    if (title.trim() === "" || content.trim() === "") {
+        alert("Please fill in both fields.");
+        return;
+    }
+
+    if (index === "") {
+        notes.push({ title, content });
+    } else {
+        notes[index] = { title, content };
+        document.getElementById("editIndex").value = "";
+    }
+
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
+
+    updateLocalStorage();
+    displayNotes();
+}
+
+function displayNotes() {
+    const list = document.getElementById("notes-list");
+    list.innerHTML = "";
+
+    notes.forEach((note, i) => {
+        list.innerHTML += `
+            <div class="note">
+                <h3>${note.title}</h3>
+                <p>${note.content}</p>
+
+                <div class="note-buttons">
+                    <button onclick="editNote(${i})">Edit</button>
+                    <button class="danger" onclick="deleteNote(${i})">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function editNote(i) {
+    document.getElementById("title").value = notes[i].title;
+    document.getElementById("content").value = notes[i].content;
+    document.getElementById("editIndex").value = i;
+}
+
+function deleteNote(i) {
+    trash.push(notes[i]);
+    notes.splice(i, 1);
+    updateLocalStorage();
+    displayNotes();
+    displayTrash();
+}
+
+function displayTrash() {
+    const list = document.getElementById("trash-list");
+    list.innerHTML = "";
+
+    trash.forEach((note, i) => {
+        list.innerHTML += `
+            <div class="trash-note">
+                <h3>${note.title}</h3>
+                <p>${note.content}</p>
+
+                <div class="note-buttons">
+                    <button onclick="restore(${i})">Restore</button>
+                    <button class="danger" onclick="permanentDelete(${i})">Delete Forever</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function restore(i) {
+    notes.push(trash[i]);
+    trash.splice(i, 1);
+    updateLocalStorage();
+    displayNotes();
+    displayTrash();
+}
+
+function permanentDelete(i) {
+    trash.splice(i, 1);
+    updateLocalStorage();
+    displayTrash();
+}
+
+// Initial Load
+displayNotes();
+displayTrash();
+
+</script>
+
+</body>
+</html>
